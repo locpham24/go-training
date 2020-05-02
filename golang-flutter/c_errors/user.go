@@ -8,4 +8,5 @@ var (
 	SignInFail   = errors.New("sign in fail")
 	UserNotFound = errors.New("can not found this user")
 	Incorrect    = errors.New("email or password is incorrect")
+	TokenError   = errors.New("token error")
 )

@@ -1,14 +1,16 @@
 package handler
 
 import (
+	"github.com/dgrijalva/jwt-go"
 	validator "github.com/go-playground/validator/v10"
 	uuid "github.com/google/uuid"
 	"github.com/labstack/echo"
-	"github.com/locpham24/go-training/c_errors"
-	"github.com/locpham24/go-training/log"
-	"github.com/locpham24/go-training/model"
-	req2 "github.com/locpham24/go-training/model/req"
-	repo "github.com/locpham24/go-training/repository"
+	"github.com/locpham24/go-training/golang-flutter/c_errors"
+	"github.com/locpham24/go-training/golang-flutter/log"
+	myMiddleware "github.com/locpham24/go-training/golang-flutter/middleware"
+	"github.com/locpham24/go-training/golang-flutter/model"
+	req2 "github.com/locpham24/go-training/golang-flutter/model/req"
+	repo "github.com/locpham24/go-training/golang-flutter/repository"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"time"
@@ -22,6 +24,7 @@ type UserHandler struct {
 func (h UserHandler) inject() {
 	h.Engine.POST("/sign-in", h.signIn)
 	h.Engine.POST("/sign-up", h.signUp)
+	h.Engine.GET("/profile", h.myProfile, myMiddleware.VerifyToken())
 }
 
 func (h UserHandler) signIn(c echo.Context) error {
@@ -63,6 +66,18 @@ func (h UserHandler) signIn(c echo.Context) error {
 		})
 	}
 
+	// gen token
+	token, err := model.GetToken(user)
+	if err != nil {
+		return c.JSON(http.StatusUnauthorized, model.Response{
+			StatusCode: http.StatusUnauthorized,
+			Message:    err.Error(),
+			Data:       nil,
+		})
+	}
+
+	user.Token = token
+	user.Password = ""
 	return c.JSON(http.StatusOK, model.Response{
 		StatusCode: http.StatusOK,
 		Message:    "success",
@@ -130,6 +145,33 @@ func (h UserHandler) signUp(c echo.Context) error {
 		return c.JSON(http.StatusConflict, model.Response{
 			StatusCode: http.StatusConflict,
 			Message:    c_errors.UserConflict.Error(),
+			Data:       nil,
+		})
+	}
+	user.Password = ""
+	return c.JSON(http.StatusOK, model.Response{
+		StatusCode: http.StatusOK,
+		Message:    "success",
+		Data:       user,
+	})
+}
+
+func (h UserHandler) myProfile(c echo.Context) error {
+	tokenData := c.Get("user").(*jwt.Token)
+	claims := tokenData.Claims.(*model.JwtCustomClaims)
+
+	user, err := h.UserRepo.SelectUserById(c.Request().Context(), claims.UserId)
+	if err != nil {
+		if err == c_errors.UserNotFound {
+			return c.JSON(http.StatusNotFound, model.Response{
+				StatusCode: http.StatusNotFound,
+				Message:    c_errors.UserNotFound.Error(),
+				Data:       nil,
+			})
+		}
+		return c.JSON(http.StatusInternalServerError, model.Response{
+			StatusCode: http.StatusInternalServerError,
+			Message:    err.Error(),
 			Data:       nil,
 		})
 	}

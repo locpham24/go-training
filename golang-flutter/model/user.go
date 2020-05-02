@@ -7,8 +7,8 @@ type User struct {
 	FullName  string    `db:"full_name, omitempty"`
 	Email     string    `db:"email, omitempty"`
 	Password  string    `json:"password,omitempty" db:"password, omitempty"`
-	Role      string    `db:"role, omitempty"`
+	Role      string    `json:"-" db:"role, omitempty"`
 	CreatedAt time.Time `json:"-" db:"created_at, omitempty"`
 	UpdatedAt time.Time `json:"-" db:"updated_at, omitempty"`
-	Token     string    `json:"-"`
+	Token     string    `json:"token,omitempty"`
 }

@@ -4,12 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"github.com/lib/pq"
-	"github.com/locpham24/go-training/c_errors"
-	"github.com/locpham24/go-training/db"
-	"github.com/locpham24/go-training/log"
-	"github.com/locpham24/go-training/model"
-	"github.com/locpham24/go-training/model/req"
-	repo "github.com/locpham24/go-training/repository"
+	"github.com/locpham24/go-training/golang-flutter/c_errors"
+	"github.com/locpham24/go-training/golang-flutter/db"
+	"github.com/locpham24/go-training/golang-flutter/log"
+	"github.com/locpham24/go-training/golang-flutter/model"
+	"github.com/locpham24/go-training/golang-flutter/model/req"
+	repo "github.com/locpham24/go-training/golang-flutter/repository"
 	"time"
 )
 
@@ -59,6 +59,19 @@ func (u *UserRepoImpl) CheckSignIn(ctx context.Context, loginReq req.ReqSignIn) 
 		return user, c_errors.SignInFail
 	}
 
+	return user, nil
+}
+
+func (u *UserRepoImpl) SelectUserById(context context.Context, userId string) (model.User, error) {
+	var user model.User
+
+	err := u.sql.DB.GetContext(context, &user, "SELECT * FROM users WHERE user_id = $1", userId)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return user, c_errors.UserNotFound
+		}
+		return user, err
+	}
 	return user, nil
 }
 
